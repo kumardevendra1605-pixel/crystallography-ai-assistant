@@ -4,12 +4,17 @@ import os
 import streamlit as st
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="xTal.ai", page_icon="🔷", layout="wide")
+st.set_page_config(page_title="xTal.ai", page_icon="🔷", layout="centered", initial_sidebar_state="collapsed")
 
 from src.qa_parser import load_all_qa
 from src.embeddings import build_and_cache_embeddings
 from src.vector_store import create_vector_store
 from src.rag_pipeline import retrieve_and_respond
+
+# ── Viewport meta + mobile viewport fix ──────────────────────────────────────
+st.markdown("""
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+""", unsafe_allow_html=True)
 
 # ── Encode background image ───────────────────────────────────────────────────
 with open("assets/1212.png", "rb") as _f:
@@ -43,6 +48,19 @@ html, body {{ margin: 0; padding: 0; }}
     background: transparent !important;
 }}
 
+/* ── Main content: full width on mobile, capped on desktop ── */
+[data-testid="stMainBlockContainer"] {{
+    max-width: 100% !important;
+    padding: 0 12px 80px 12px !important;
+}}
+@media (min-width: 768px) {{
+    [data-testid="stMainBlockContainer"] {{
+        max-width: 860px !important;
+        padding: 0 24px 80px 24px !important;
+        margin: 0 auto !important;
+    }}
+}}
+
 /* ── Hide Streamlit chrome we don't need ── */
 #MainMenu, footer {{ visibility: hidden; }}
 [data-testid="stDecoration"] {{ display: none; }}
@@ -56,10 +74,18 @@ html, body {{ margin: 0; padding: 0; }}
     z-index: 101 !important;
 }}
 
-/* ── Sidebar ── */
+/* ── Sidebar — full-width overlay on mobile ── */
 [data-testid="stSidebar"] {{
     background: rgba(10, 10, 10, 0.97) !important;
     border-right: 1px solid #1e1e1e !important;
+    min-width: 260px !important;
+    max-width: 80vw !important;
+}}
+@media (max-width: 767px) {{
+    [data-testid="stSidebar"] {{
+        min-width: 100vw !important;
+        max-width: 100vw !important;
+    }}
 }}
 [data-testid="stSidebar"] > div:first-child {{
     padding-top: 12px !important;
@@ -71,15 +97,16 @@ html, body {{ margin: 0; padding: 0; }}
     border: none !important;
     color: #c8c8c8 !important;
     text-align: left !important;
-    padding: 8px 10px !important;
+    padding: 10px 10px !important;
     border-radius: 8px !important;
-    font-size: 13.5px !important;
+    font-size: 14px !important;
     width: 100% !important;
     transition: background 0.18s ease, color 0.18s ease !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     font-family: 'Inter', sans-serif !important;
+    min-height: 44px !important;
 }}
 [data-testid="stSidebar"] .stButton > button:hover {{
     background: rgba(255,255,255,0.06) !important;
@@ -94,7 +121,8 @@ html, body {{ margin: 0; padding: 0; }}
     font-weight: 500 !important;
     border-radius: 10px !important;
     margin-bottom: 4px !important;
-    padding: 10px 14px !important;
+    padding: 12px 14px !important;
+    min-height: 48px !important;
 }}
 [data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {{
     background: rgba(255,255,255,0.09) !important;
@@ -111,21 +139,21 @@ html, body {{ margin: 0; padding: 0; }}
     padding-left: 8px !important;
 }}
 
-/* Delete button — small square, vertically centered */
+/* Delete button — touch-friendly */
 .del-btn .stButton > button,
 [data-testid="stHorizontalBlock"] > div:last-child .stButton > button {{
     color: #555 !important;
-    font-size: 12px !important;
+    font-size: 14px !important;
     padding: 0 !important;
     margin: 0 auto !important;
-    width: 22px !important;
-    height: 22px !important;
-    min-width: 22px !important;
-    min-height: 22px !important;
-    max-width: 22px !important;
-    max-height: 22px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    max-width: 36px !important;
+    max-height: 36px !important;
     line-height: 1 !important;
-    border-radius: 4px !important;
+    border-radius: 6px !important;
     border: none !important;
     background: transparent !important;
     box-shadow: none !important;
@@ -133,7 +161,8 @@ html, body {{ margin: 0; padding: 0; }}
     align-items: center !important;
     justify-content: center !important;
 }}
-[data-testid="stHorizontalBlock"] > div:last-child .stButton > button:hover {{
+[data-testid="stHorizontalBlock"] > div:last-child .stButton > button:hover,
+[data-testid="stHorizontalBlock"] > div:last-child .stButton > button:active {{
     color: #ff6b6b !important;
     background: rgba(255,80,80,0.1) !important;
 }}
@@ -149,7 +178,7 @@ html, body {{ margin: 0; padding: 0; }}
 
 /* Section labels */
 .section-label {{
-    font-size: 10.5px;
+    font-size: 11px;
     font-weight: 600;
     color: #444;
     text-transform: uppercase;
@@ -169,7 +198,7 @@ html, body {{ margin: 0; padding: 0; }}
     text-align: center;
     padding: 32px 16px;
     color: #3a3a3a;
-    font-size: 13px;
+    font-size: 14px;
 }}
 
 /* ── Chat messages ── */
@@ -177,12 +206,26 @@ html, body {{ margin: 0; padding: 0; }}
     background: rgba(0,0,0,0.45) !important;
     border: 1px solid rgba(255,255,255,0.06) !important;
     border-radius: 12px !important;
-    padding: 14px 16px !important;
+    padding: 12px 14px !important;
     margin-bottom: 8px !important;
     backdrop-filter: blur(8px);
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+}}
+[data-testid="stChatMessage"] p,
+[data-testid="stChatMessage"] li {{
+    font-size: 15px !important;
+    line-height: 1.6 !important;
 }}
 
-/* ── Chat input ── */
+/* ── Chat input — sticky at bottom on mobile ── */
+[data-testid="stBottom"] {{
+    position: sticky !important;
+    bottom: 0 !important;
+    background: transparent !important;
+    padding: 8px 0 env(safe-area-inset-bottom, 8px) !important;
+    z-index: 50 !important;
+}}
 [data-testid="stChatInput"] textarea,
 [data-testid="stChatInput"] textarea:focus,
 [data-testid="stChatInput"] textarea:active {{
@@ -192,13 +235,14 @@ html, body {{ margin: 0; padding: 0; }}
     box-shadow: none !important;
     color: #ececec !important;
     font-family: 'Inter', sans-serif !important;
+    font-size: 16px !important; /* prevents iOS zoom on focus */
 }}
 [data-testid="stChatInput"] > div,
 [data-testid="stChatInput"] > div:focus-within {{
-    background: rgba(0,0,0,0.45) !important;
-    border: 1px solid rgba(255,255,255,0.06) !important;
-    border-radius: 12px !important;
-    backdrop-filter: blur(8px) !important;
+    background: rgba(0,0,0,0.55) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 14px !important;
+    backdrop-filter: blur(12px) !important;
     box-shadow: none !important;
 }}
 
@@ -208,6 +252,13 @@ html, body {{ margin: 0; padding: 0; }}
     border: 1px solid rgba(255,255,255,0.07) !important;
     border-radius: 10px !important;
     backdrop-filter: blur(8px);
+}}
+[data-testid="stExpander"] summary {{
+    font-size: 14px !important;
+    padding: 10px 14px !important;
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
 }}
 
 /* ── Divider ── */
@@ -225,6 +276,25 @@ hr {{
     background: rgba(74,158,255,0.1) !important;
     border: 1px solid rgba(74,158,255,0.2) !important;
     border-radius: 8px !important;
+    font-size: 14px !important;
+}}
+
+/* ── Prevent horizontal scroll on mobile ── */
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+[data-testid="stMainBlockContainer"] {{
+    overflow-x: hidden !important;
+}}
+
+/* ── Responsive text ── */
+@media (max-width: 480px) {{
+    [data-testid="stChatMessage"] p,
+    [data-testid="stChatMessage"] li {{
+        font-size: 14px !important;
+    }}
+    .section-label {{
+        font-size: 10px;
+    }}
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -235,20 +305,23 @@ _cv1.html("""
 <style>
 #st-toggle {
     position: fixed;
-    top: 12px; left: 12px;
+    top: 10px; left: 10px;
     z-index: 999999;
-    width: 34px; height: 34px;
-    background: rgba(20,20,20,0.9);
+    width: 40px; height: 40px;
+    background: rgba(20,20,20,0.88);
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
+    border-radius: 10px;
     color: #ccc;
-    font-size: 16px;
+    font-size: 18px;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: background 0.2s, border-color 0.2s;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
-#st-toggle:hover { background: rgba(40,40,40,0.95); border-color: rgba(255,255,255,0.2); color: #fff; }
+#st-toggle:hover,
+#st-toggle:active { background: rgba(40,40,40,0.95); border-color: rgba(255,255,255,0.2); color: #fff; }
 </style>
 <button id="st-toggle" title="Toggle sidebar" onclick="toggle()">&#9776;</button>
 <script>
@@ -440,7 +513,7 @@ if not active["messages"]:
     st.markdown("""
     <div style="
         text-align:center;
-        padding: 48px 0 24px;
+        padding: 32px 16px 16px;
         color: rgba(255,255,255,0.35);
         font-size: 15px;
         font-family: 'Inter', sans-serif;
