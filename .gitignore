@@ -1,7 +1,46 @@
+# Virtual environments
 venv/
+venv_mac/
+.venv/
+env/
+
+# Python cache
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment variables
 .env
+.env.*
+
+# Streamlit credentials (local only)
+.streamlit/credentials.toml
+
+# Embedding cache (regenerated on startup)
+database/qa_embeddings.pkl
+database/*.pkl
+
+# FAISS index files
 *.faiss
 index.faiss
 index.pkl
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
