@@ -8,9 +8,15 @@ from src.embeddings import embed_query
 from src.vector_store import search
 from src.topic_grouper import group_by_subtopic
 
-# Pick up model config from environment, with sensible defaults
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:latest")
-OLLAMA_HOST  = os.getenv("OLLAMA_HOST",  "http://localhost:11434")
+# LLM config — auto-detects which backend to use:
+#   - If GROQ_API_KEY is set → use Groq (works on Streamlit Cloud, any server)
+#   - Otherwise → use Ollama (local)
+GROQ_API_KEY  = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL    = os.getenv("GROQ_MODEL",   "llama3-8b-8192")
+OLLAMA_MODEL  = os.getenv("OLLAMA_MODEL", "llama3.2:latest")
+OLLAMA_HOST   = os.getenv("OLLAMA_HOST",  "http://localhost:11434")
+
+USE_GROQ = bool(GROQ_API_KEY)
 
 # Similarity thresholds
 MID_CONFIDENCE = 0.45   # above this → include in the answer
@@ -153,12 +159,8 @@ def _build_answer(user_query, topic_groups):
             for src in group_sources
         )
 
-    try:
-        import ollama
-
-        section_list = "\n".join(f"- {label}" for label in topic_groups)
-
-        prompt = f"""You are an expert crystallographer writing for researchers and graduate students.
+    section_list = "\n".join(f"- {label}" for label in topic_groups)
+    prompt = f"""You are an expert crystallographer writing for researchers and graduate students.
 
 USER QUESTION: {user_query}
 
@@ -179,13 +181,8 @@ INSTRUCTIONS:
 
 ANSWER:"""
 
-        response = ollama.chat(
-            model=OLLAMA_MODEL,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        answer = response["message"]["content"].strip()
-
-        # Append citation lines after each section
+    try:
+        answer = _call_llm(prompt)
         for label, footer in citation_footers.items():
             answer = re.sub(
                 rf'(### {re.escape(label)}.*?)(\n### |\Z)',
@@ -193,17 +190,40 @@ ANSWER:"""
                 answer,
                 flags=re.DOTALL,
             )
-
         return answer.strip()
 
     except Exception:
-        # Ollama not available — just format the raw Q&A nicely
+        # LLM not available — just format the raw Q&A nicely
         sections = []
         for label, group_sources in topic_groups.items():
             parts = [f"**{src['question']}**\n\n{src['answer']}" for src in group_sources]
             footer = citation_footers[label]
             sections.append(f"### {label}\n\n" + "\n\n".join(parts) + "\n\n" + footer)
         return "\n\n---\n\n".join(sections)
+
+
+def _call_llm(prompt):
+    """Send a prompt to whichever LLM backend is configured.
+
+    Uses Groq if GROQ_API_KEY is set (good for cloud deployments),
+    falls back to Ollama for local use.
+    """
+    if USE_GROQ:
+        from groq import Groq
+        client = Groq(api_key=GROQ_API_KEY)
+        response = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+        )
+        return response.choices[0].message.content.strip()
+    else:
+        import ollama
+        response = ollama.chat(
+            model=OLLAMA_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return response["message"]["content"].strip()
 
 
 def _query_info(processed):
