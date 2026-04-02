@@ -4,7 +4,7 @@ import os
 import streamlit as st
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="xTal.ai", page_icon="🔷", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="xTal.ai", page_icon="🔷", layout="wide", initial_sidebar_state="collapsed")
 
 from src.qa_parser import load_all_qa
 from src.embeddings import build_and_cache_embeddings
@@ -55,9 +55,8 @@ html, body {{ margin: 0; padding: 0; }}
 }}
 @media (min-width: 768px) {{
     [data-testid="stMainBlockContainer"] {{
-        max-width: 860px !important;
+        max-width: 100% !important;
         padding: 0 24px 80px 24px !important;
-        margin: 0 auto !important;
     }}
 }}
 
