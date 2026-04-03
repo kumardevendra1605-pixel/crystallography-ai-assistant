@@ -527,6 +527,20 @@ if not active["messages"]:
     </div>
     """, unsafe_allow_html=True)
 
+# ── Footer ───────────────────────────────────────────────────────────────────
+st.markdown("""
+<div style="
+    text-align: center;
+    padding: 24px 0 12px;
+    color: rgba(255,255,255,0.2);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.03em;
+">
+    Created by Devendra Saini
+</div>
+""", unsafe_allow_html=True)
+
 # ── Input ─────────────────────────────────────────────────────────────────────
 prompt = st.chat_input("Ask anything about crystallography...")
 
