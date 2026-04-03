@@ -1,6 +1,8 @@
 # Virtual environments
 venv/
 venv_mac/
+venv_new/
+venv_*/
 .venv/
 env/
 
