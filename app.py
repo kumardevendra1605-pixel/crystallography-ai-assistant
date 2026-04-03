@@ -62,7 +62,12 @@ html, body {{ margin: 0; padding: 0; }}
 
 /* ── Hide Streamlit chrome we don't need ── */
 #MainMenu, footer {{ visibility: hidden; }}
-[data-testid="stDecoration"] {{ display: none; }}
+footer {{ display: none !important; }}
+[data-testid="stDecoration"] {{ display: none !important; }}
+[data-testid="stFooter"] {{ display: none !important; }}
+.viewerBadge_container__r5tak,
+.viewerBadge_link__qRIco,
+#stDecoration {{ display: none !important; }}
 
 /* ── Keep header/toolbar visible and on top ── */
 [data-testid="stHeader"] {{
