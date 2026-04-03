@@ -283,7 +283,19 @@ hr {{
     font-size: 14px !important;
 }}
 
-/* ── Prevent horizontal scroll on mobile ── */
+/* ── "Created by" label — fixed below chat input ── */
+.created-by {{
+    position: fixed;
+    bottom: 6px;
+    left: 0; right: 0;
+    text-align: center;
+    color: rgba(255,255,255,0.18);
+    font-size: 11px;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+    z-index: 49;
+}}
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"],
 [data-testid="stMainBlockContainer"] {{
@@ -527,22 +539,10 @@ if not active["messages"]:
     </div>
     """, unsafe_allow_html=True)
 
-# ── Footer ───────────────────────────────────────────────────────────────────
-st.markdown("""
-<div style="
-    text-align: center;
-    padding: 24px 0 12px;
-    color: rgba(255,255,255,0.2);
-    font-size: 13px;
-    font-family: 'Inter', sans-serif;
-    letter-spacing: 0.03em;
-">
-    Created by Devendra Saini
-</div>
-""", unsafe_allow_html=True)
-
 # ── Input ─────────────────────────────────────────────────────────────────────
 prompt = st.chat_input("Ask anything about crystallography...")
+
+st.markdown('<div class="created-by">Created by Devendra Saini</div>', unsafe_allow_html=True)
 
 if prompt:
     is_first = not active.get("titled")
