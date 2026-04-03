@@ -69,6 +69,9 @@ footer {{ display: none !important; }}
 .viewerBadge_link__qRIco,
 #stDecoration {{ display: none !important; }}
 
+/* Hide Streamlit's default sidebar collapse arrow — we use our own toggle */
+[data-testid="collapsedControl"] {{ display: none !important; }}
+
 /* ── Keep header/toolbar visible and on top ── */
 [data-testid="stHeader"] {{
     background: transparent !important;
@@ -318,41 +321,71 @@ hr {{
 # ── Floating sidebar toggle ───────────────────────────────────────────────────
 import streamlit.components.v1 as _cv1
 _cv1.html("""
-<style>
-#st-toggle {
-    position: fixed;
-    top: 10px; left: 10px;
-    z-index: 999999;
-    width: 40px; height: 40px;
-    background: rgba(20,20,20,0.88);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px;
-    color: #ccc;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s, border-color 0.2s;
-    backdrop-filter: blur(10px);
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-}
-#st-toggle:hover,
-#st-toggle:active { background: rgba(40,40,40,0.95); border-color: rgba(255,255,255,0.2); color: #fff; }
-</style>
-<button id="st-toggle" title="Toggle sidebar" onclick="toggle()">&#9776;</button>
 <script>
-function toggle() {
+(function() {
     var d = window.parent.document;
-    var btn = d.querySelector('[data-testid="collapsedControl"] button')
-           || d.querySelector('button[aria-label="Close sidebar"]')
-           || d.querySelector('button[aria-label="Open sidebar"]');
-    if (btn) { btn.click(); return; }
-    var all = d.querySelectorAll('button');
-    for (var b of all) {
-        var r = b.getBoundingClientRect();
-        if (r.left < 80 && r.top < 100 && r.width < 60) { b.click(); return; }
-    }
-}
+
+    // Remove any existing toggle we injected before
+    var old = d.getElementById('xtal-sidebar-toggle');
+    if (old) old.remove();
+
+    var btn = d.createElement('button');
+    btn.id = 'xtal-sidebar-toggle';
+    btn.title = 'Toggle conversations';
+    btn.innerHTML = '&#9776;';
+    btn.setAttribute('aria-label', 'Toggle sidebar');
+
+    var style = d.createElement('style');
+    style.textContent = `
+        #xtal-sidebar-toggle {
+            position: fixed;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            z-index: 999999;
+            width: 22px;
+            height: 64px;
+            background: rgba(20,20,20,0.82);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+            color: #aaa;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, color 0.2s, width 0.2s;
+            backdrop-filter: blur(10px);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            padding: 0;
+            line-height: 1;
+            writing-mode: horizontal-tb;
+        }
+        #xtal-sidebar-toggle:hover,
+        #xtal-sidebar-toggle:active {
+            background: rgba(40,40,40,0.95);
+            color: #fff;
+            width: 28px;
+        }
+    `;
+    d.head.appendChild(style);
+
+    btn.onclick = function() {
+        var sb = d.querySelector('[data-testid="collapsedControl"] button')
+               || d.querySelector('button[aria-label="Close sidebar"]')
+               || d.querySelector('button[aria-label="Open sidebar"]');
+        if (sb) { sb.click(); return; }
+        var all = d.querySelectorAll('button');
+        for (var b of all) {
+            var r = b.getBoundingClientRect();
+            if (r.left < 80 && r.top < 200 && r.width < 60) { b.click(); return; }
+        }
+    };
+
+    d.body.appendChild(btn);
+})();
 </script>
 """, height=0)
 
