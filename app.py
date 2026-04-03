@@ -1,3 +1,4 @@
+from __future__ import annotations
 import time
 import base64
 import os
@@ -29,7 +30,12 @@ st.markdown(f"""
 
 /* ── Reset & base ── */
 *, *::before, *::after {{ box-sizing: border-box; }}
-html, body {{ margin: 0; padding: 0; }}
+html, body {{
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden !important;
+    width: 100% !important;
+}}
 
 /* ── Mobile background (default) ── */
 [data-testid="stAppViewContainer"] {{
@@ -40,6 +46,9 @@ html, body {{ margin: 0; padding: 0; }}
     background-attachment: scroll;
     font-family: 'Inter', 'Segoe UI', sans-serif;
     color: #ececec;
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
 }}
 
 /* ── Desktop background ── */
@@ -58,15 +67,97 @@ html, body {{ margin: 0; padding: 0; }}
     background: transparent !important;
 }}
 
-/* ── Main content: full width on mobile, capped on desktop ── */
+/* ── Main content area: always fills available width ── */
+[data-testid="stMain"] {{
+    flex: 1 1 0% !important;
+    overflow-x: hidden !important;
+}}
 [data-testid="stMainBlockContainer"] {{
     max-width: 100% !important;
+    width: 100% !important;
     padding: 0 12px 80px 12px !important;
+    overflow-x: hidden !important;
 }}
 @media (min-width: 768px) {{
     [data-testid="stMainBlockContainer"] {{
-        max-width: 100% !important;
         padding: 0 24px 80px 24px !important;
+    }}
+}}
+
+/* ────────────────────────────────────────────────────────────
+   MOBILE LAYOUT — everything below 768 px
+   The critical goal: sidebar is completely off-canvas (hidden
+   to the left) by default, main content = 100 vw, no margin.
+   ──────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {{
+
+    /* 1. Prevent the app-level flex row from overflowing */
+    [data-testid="stAppViewContainer"] {{
+        display: flex !important;
+        flex-direction: row !important;
+        overflow: hidden !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        position: relative !important;
+    }}
+
+    /* 2. Sidebar: fixed overlay, completely hidden off-canvas by default */
+    [data-testid="stSidebar"] {{
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        min-width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100vh !important;
+        z-index: 999998 !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        will-change: transform !important;
+        overflow-y: auto !important;
+        /* Flatten the Streamlit sidebar width allocation to 0 in flow */
+        flex-shrink: 0 !important;
+        flex-basis: 0px !important;
+    }}
+
+    /* 3. Main section: take up the full viewport, zero left margin */
+    [data-testid="stMain"],
+    section.main,
+    [data-testid="stAppViewContainer"] > section:not([data-testid="stSidebar"]) {{
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        width: 100vw !important;
+        min-width: 100vw !important;
+        max-width: 100vw !important;
+        flex: 1 1 100% !important;
+        position: relative !important;
+        left: 0 !important;
+        transform: none !important;
+        overflow-x: hidden !important;
+    }}
+
+    /* 4. Kill any residual horizontal overflow everywhere */
+    html, body,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"],
+    [data-testid="stMainBlockContainer"],
+    [data-testid="stAppViewBlockContainer"],
+    [data-testid="stVerticalBlock"] {{
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+    }}
+
+    /* 5. Hide Streamlit-native sidebar toggle controls on mobile */
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"],
+    [data-testid="stSidebarNavItems"],
+    [data-testid="stSidebarUserContent"] > div:first-child {{
+        /* don't hide user content, only native controls */
+    }}
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"],
+    [data-testid="stSidebarNavItems"] {{
+        display: none !important;
     }}
 }}
 
@@ -82,7 +173,7 @@ footer {{ display: none !important; }}
 /* Hide Streamlit's default sidebar collapse arrow — we use our own toggle */
 [data-testid="collapsedControl"] {{ display: none !important; }}
 
-/* Hide the sidebar toggle button that appears in the header next to the logo */
+/* Hide the sidebar toggle button that appears in the header */
 [data-testid="stSidebarNavItems"] {{ display: none !important; }}
 button[kind="header"] {{ display: none !important; }}
 [data-testid="stHeader"] button:first-child {{ display: none !important; }}
@@ -96,18 +187,12 @@ button[kind="header"] {{ display: none !important; }}
     z-index: 101 !important;
 }}
 
-/* ── Sidebar — full-width overlay on mobile ── */
+/* ── Sidebar — desktop appearance ── */
 [data-testid="stSidebar"] {{
     background: rgba(10, 10, 10, 0.97) !important;
     border-right: 1px solid #1e1e1e !important;
     min-width: 260px !important;
     max-width: 80vw !important;
-}}
-@media (max-width: 767px) {{
-    [data-testid="stSidebar"] {{
-        min-width: 100vw !important;
-        max-width: 100vw !important;
-    }}
 }}
 [data-testid="stSidebar"] > div:first-child {{
     padding-top: 12px !important;
@@ -247,6 +332,7 @@ button[kind="header"] {{ display: none !important; }}
     background: transparent !important;
     padding: 8px 0 env(safe-area-inset-bottom, 8px) !important;
     z-index: 50 !important;
+    width: 100% !important;
 }}
 [data-testid="stChatInput"] textarea,
 [data-testid="stChatInput"] textarea:focus,
@@ -314,11 +400,6 @@ hr {{
     pointer-events: none;
     z-index: 9999;
 }}
-[data-testid="stAppViewContainer"],
-[data-testid="stMain"],
-[data-testid="stMainBlockContainer"] {{
-    overflow-x: hidden !important;
-}}
 
 /* ── Responsive text ── */
 @media (max-width: 480px) {{
@@ -334,73 +415,263 @@ hr {{
 """, unsafe_allow_html=True)
 
 # ── Floating sidebar toggle ───────────────────────────────────────────────────
+st.markdown("""
+<style>
+/* ───────────────────────────────────────────────────────────────
+   HAMBURGER TOGGLE BUTTON
+   Uses .st-key-sidebar_toggle — the class Streamlit auto-generates
+   on the wrapper of every element whose key="sidebar_toggle".
+   This is the only reliable way to target a specific st.button().
+─────────────────────────────────────────────────────────────── */
+
+/* Desktop: thin vertical tab on the left edge */
+.st-key-sidebar_toggle {
+    position: fixed !important;
+    top: 50% !important;
+    left: 0 !important;
+    transform: translateY(-50%) !important;
+    z-index: 1000000 !important;
+    width: 22px !important;
+    height: 64px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+.st-key-sidebar_toggle button {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: rgba(18,18,18,0.85) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    border-left: none !important;
+    border-radius: 0 10px 10px 0 !important;
+    color: #aaa !important;
+    font-size: 14px !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    -webkit-tap-highlight-color: transparent !important;
+    touch-action: manipulation !important;
+    transition: width 0.2s ease, background 0.2s ease, color 0.2s ease !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+.st-key-sidebar_toggle button:hover,
+.st-key-sidebar_toggle button:active {
+    background: rgba(40,40,40,0.97) !important;
+    color: #fff !important;
+}
+
+/* Mobile: square button, top-left corner with 14px inset */
+@media (max-width: 767px) {
+    .st-key-sidebar_toggle {
+        top: 14px !important;
+        left: 14px !important;
+        transform: none !important;
+        width: 44px !important;
+        height: 44px !important;
+    }
+    .st-key-sidebar_toggle button {
+        border-radius: 10px !important;
+        border: 1px solid rgba(255,255,255,0.12) !important;
+        font-size: 20px !important;
+        background: rgba(15,15,15,0.88) !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.45) !important;
+    }
+    .st-key-sidebar_toggle button:hover,
+    .st-key-sidebar_toggle button:active {
+        background: rgba(35,35,35,0.97) !important;
+        color: #fff !important;
+    }
+}
+
+/* ── Drawer backdrop overlay ── */
+#xtal-drawer-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 999990;
+    opacity: 0;
+    pointer-events: none;      /* never intercept clicks when hidden */
+    transition: opacity 0.28s ease;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+/* ── Mobile: top padding so content clears the hamburger ── */
+@media (max-width: 767px) {
+    [data-testid="stMainBlockContainer"] {
+        padding-top: 70px !important;
+    }
+}
+</style>
+<div id="xtal-drawer-backdrop"></div>
+""", unsafe_allow_html=True)
+
+if "sidebar_open" not in st.session_state:
+    st.session_state.sidebar_open = False
+
+# Render the hamburger button (no wrapper div needed — we use .st-key-sidebar_toggle)
+if st.button("☰", key="sidebar_toggle"):
+    st.session_state.sidebar_open = not st.session_state.sidebar_open
+    st.rerun()
+
+# Apply sidebar open/close + hamburger positioning via JS
+_sidebar_state = "open" if st.session_state.sidebar_open else "closed"
 import streamlit.components.v1 as _cv1
-_cv1.html("""
+_cv1.html(f"""
 <script>
-(function() {
+(function() {{
     var d = window.parent.document;
+    var state = "{_sidebar_state}";
 
-    // Remove any existing toggle we injected before
-    var old = d.getElementById('xtal-sidebar-toggle');
-    if (old) old.remove();
-
-    var btn = d.createElement('button');
-    btn.id = 'xtal-sidebar-toggle';
-    btn.title = 'Toggle conversations';
-    btn.innerHTML = '&#9776;';
-    btn.setAttribute('aria-label', 'Toggle sidebar');
-
-    var style = d.createElement('style');
-    style.textContent = `
-        #xtal-sidebar-toggle {
-            position: fixed;
-            top: 50%;
-            left: 0;
-            transform: translateY(-50%);
-            z-index: 999999;
-            width: 22px;
-            height: 64px;
-            background: rgba(20,20,20,0.82);
-            border: 1px solid rgba(255,255,255,0.10);
-            border-left: none;
-            border-radius: 0 10px 10px 0;
-            color: #aaa;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s, color 0.2s, width 0.2s;
-            backdrop-filter: blur(10px);
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-            padding: 0;
-            line-height: 1;
-            writing-mode: horizontal-tb;
-        }
-        #xtal-sidebar-toggle:hover,
-        #xtal-sidebar-toggle:active {
-            background: rgba(40,40,40,0.95);
-            color: #fff;
-            width: 28px;
-        }
-    `;
-    d.head.appendChild(style);
-
-    btn.onclick = function() {
-        var sb = d.querySelector('button[aria-label="Close sidebar"]')
-               || d.querySelector('button[aria-label="Open sidebar"]')
-               || d.querySelector('[data-testid="collapsedControl"] button');
-        if (sb) { sb.click(); return; }
+    /* ── Find a button by its visible text content ── */
+    function findBtn(text) {{
         var all = d.querySelectorAll('button');
-        for (var b of all) {
-            var r = b.getBoundingClientRect();
-            if (r.left < 80 && r.top < 200 && r.width < 60) { b.click(); return; }
-        }
-    };
+        for (var i = 0; i < all.length; i++) {{
+            if (all[i].textContent.trim() === text) return all[i];
+        }}
+        return null;
+    }}
 
-    d.body.appendChild(btn);
-})();
+    /* ── Position the hamburger button with position:fixed ──────────────
+       CSS selectors like st-key-* are absent in this Streamlit build.
+       style.setProperty with 'important' priority always overrides
+       emotion CSS class styles, making this 100% reliable.           */
+    function positionHamburger() {{
+        var btn = findBtn('\u2630');
+        if (!btn) {{ setTimeout(positionHamburger, 80); return; }}
+
+        var mobile = window.parent.innerWidth <= 767;
+
+        /* Common properties */
+        btn.style.setProperty('position', 'fixed', 'important');
+        btn.style.setProperty('z-index', '1000000', 'important');
+        btn.style.setProperty('padding', '0', 'important');
+        btn.style.setProperty('cursor', 'pointer', 'important');
+        btn.style.setProperty('display', 'flex', 'important');
+        btn.style.setProperty('align-items', 'center', 'important');
+        btn.style.setProperty('justify-content', 'center', 'important');
+        btn.style.setProperty('-webkit-backdrop-filter', 'blur(12px)', 'important');
+        btn.style.setProperty('backdrop-filter', 'blur(12px)', 'important');
+        btn.style.setProperty('-webkit-tap-highlight-color', 'transparent', 'important');
+        btn.style.setProperty('touch-action', 'manipulation', 'important');
+        btn.style.setProperty('transition', 'background 0.2s ease, color 0.2s ease', 'important');
+
+        if (mobile) {{
+            btn.style.setProperty('top',    '14px', 'important');
+            btn.style.setProperty('left',   '14px', 'important');
+            btn.style.setProperty('right',  'auto', 'important');
+            btn.style.setProperty('transform', 'none', 'important');
+            btn.style.setProperty('width',  '44px', 'important');
+            btn.style.setProperty('height', '44px', 'important');
+            btn.style.setProperty('min-width',  '44px', 'important');
+            btn.style.setProperty('min-height', '44px', 'important');
+            btn.style.setProperty('border-radius', '10px', 'important');
+            btn.style.setProperty('border', '1px solid rgba(255,255,255,0.15)', 'important');
+            btn.style.setProperty('background', 'rgba(15,15,15,0.92)', 'important');
+            btn.style.setProperty('color', '#ffffff', 'important');
+            btn.style.setProperty('font-size', '20px', 'important');
+            btn.style.setProperty('box-shadow', '0 2px 16px rgba(0,0,0,0.55)', 'important');
+        }} else {{
+            /* Desktop: thin tab on left edge */
+            btn.style.setProperty('top',    '50%',  'important');
+            btn.style.setProperty('left',   '0',    'important');
+            btn.style.setProperty('right',  'auto', 'important');
+            btn.style.setProperty('transform', 'translateY(-50%)', 'important');
+            btn.style.setProperty('width',  '22px', 'important');
+            btn.style.setProperty('height', '64px', 'important');
+            btn.style.setProperty('min-width',  '22px', 'important');
+            btn.style.setProperty('min-height', '0', 'important');
+            btn.style.setProperty('border-radius', '0 10px 10px 0', 'important');
+            btn.style.setProperty('border', '1px solid rgba(255,255,255,0.10)', 'important');
+            btn.style.setProperty('border-left', 'none', 'important');
+            btn.style.setProperty('background', 'rgba(18,18,18,0.85)', 'important');
+            btn.style.setProperty('color', '#aaa', 'important');
+            btn.style.setProperty('font-size', '14px', 'important');
+            btn.style.setProperty('box-shadow', 'none', 'important');
+        }}
+    }}
+
+    /* ── Apply sidebar open/close state + reset main content ── */
+    function applyMobileSidebar() {{
+        if (window.parent.innerWidth > 767) return;
+
+        var sidebar  = d.querySelector('[data-testid="stSidebar"]');
+        var main     = d.querySelector('[data-testid="stMain"]');
+        var backdrop = d.getElementById('xtal-drawer-backdrop');
+        if (!sidebar) {{ setTimeout(applyMobileSidebar, 50); return; }}
+
+        var baseStyle = [
+            'position:fixed', 'top:0', 'left:0',
+            'width:85vw', 'min-width:280px', 'max-width:360px',
+            'height:100vh', 'z-index:999995',
+            'transition:transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+            'will-change:transform', 'overflow-y:auto', 'overflow-x:hidden',
+            'background:rgba(10,10,10,0.98)', 'flex-basis:0px',
+            'box-shadow:4px 0 24px rgba(0,0,0,0.6)',
+        ].join('!important;') + '!important;';
+
+        if (state === 'open') {{
+            sidebar.style.cssText = baseStyle + 'transform:translateX(0)!important;';
+            if (backdrop) {{
+                backdrop.style.pointerEvents = 'auto';
+                backdrop.style.display = 'block';
+                void backdrop.offsetWidth;
+                backdrop.style.opacity = '1';
+            }}
+            d.body.style.overflow = 'hidden';
+        }} else {{
+            sidebar.style.cssText = baseStyle + 'transform:translateX(-100%)!important;';
+            if (backdrop) {{
+                backdrop.style.opacity = '0';
+                backdrop.style.pointerEvents = 'none';
+                setTimeout(function() {{ backdrop.style.display = 'none'; }}, 300);
+            }}
+            d.body.style.overflow = '';
+        }}
+
+        if (main) {{
+            main.style.cssText = [
+                'margin-left:0', 'padding-left:0',
+                'width:100vw', 'min-width:100vw', 'max-width:100vw',
+                'flex:1 1 100%', 'position:relative',
+                'left:0', 'transform:none', 'overflow-x:hidden',
+            ].join('!important;') + '!important;';
+        }}
+    }}
+
+    /* ── Hook backdrop tap → close drawer ── */
+    function hookBackdrop() {{
+        var backdrop = d.getElementById('xtal-drawer-backdrop');
+        if (backdrop && !backdrop._hooked) {{
+            backdrop._hooked = true;
+            backdrop.addEventListener('click', function() {{
+                /* Find ✕ close button inside the sidebar element */
+                var sidebar = d.querySelector('[data-testid="stSidebar"]');
+                var closeBtn = null;
+                if (sidebar) {{
+                    var btns = sidebar.querySelectorAll('button');
+                    for (var i = 0; i < btns.length; i++) {{
+                        if (btns[i].textContent.trim() === '\u2715') {{
+                            closeBtn = btns[i]; break;
+                        }}
+                    }}
+                }}
+                if (closeBtn) closeBtn.click();
+            }});
+        }}
+    }}
+
+    /* ── Run on load and after DOM settles ── */
+    positionHamburger();
+    applyMobileSidebar();
+    hookBackdrop();
+    setTimeout(function() {{ positionHamburger(); applyMobileSidebar(); hookBackdrop(); }}, 150);
+    setTimeout(function() {{ positionHamburger(); applyMobileSidebar(); }}, 550);
+}})();
 </script>
 """, height=0)
 
@@ -479,6 +750,56 @@ def _group_conversations(convs):
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
+    # ── Close button — uses .st-key-sidebar_close (Streamlit's auto-class) ──
+    st.markdown("""
+    <style>
+    /* Hidden on desktop */
+    .st-key-sidebar_close { display: none !important; }
+
+    /* Mobile: fixed at top-right of the viewport, above the drawer */
+    @media (max-width: 767px) {
+        .st-key-sidebar_close {
+            display: block !important;
+            position: fixed !important;
+            top: 14px !important;
+            right: 14px !important;
+            z-index: 1000001 !important;
+            width: 44px !important;
+            height: 44px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .st-key-sidebar_close button {
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            min-height: 44px !important;
+            padding: 0 !important;
+            background: rgba(35,35,35,0.95) !important;
+            border: 1px solid rgba(255,255,255,0.15) !important;
+            border-radius: 10px !important;
+            color: #ccc !important;
+            font-size: 18px !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: background 0.18s ease, color 0.18s ease !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4) !important;
+            -webkit-tap-highlight-color: transparent !important;
+        }
+        .st-key-sidebar_close button:hover,
+        .st-key-sidebar_close button:active {
+            background: rgba(60,60,60,0.98) !important;
+            color: #fff !important;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    if st.button("✕", key="sidebar_close"):
+        st.session_state.sidebar_open = False
+        st.rerun()
+
     if st.button("＋  New conversation", use_container_width=True, type="primary"):
         _new_conversation()
         st.rerun()
