@@ -16,9 +16,11 @@ st.markdown("""
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 """, unsafe_allow_html=True)
 
-# ── Encode background image ───────────────────────────────────────────────────
+# ── Encode background images ──────────────────────────────────────────────────
 with open("assets/1212.png", "rb") as _f:
-    _BG = base64.b64encode(_f.read()).decode()
+    _BG_DESKTOP = base64.b64encode(_f.read()).decode()
+with open("assets/1111.png", "rb") as _f:
+    _BG_MOBILE = base64.b64encode(_f.read()).decode()
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown(f"""
@@ -29,15 +31,23 @@ st.markdown(f"""
 *, *::before, *::after {{ box-sizing: border-box; }}
 html, body {{ margin: 0; padding: 0; }}
 
-/* ── Full-app background ── */
+/* ── Mobile background (default) ── */
 [data-testid="stAppViewContainer"] {{
-    background-image: url("data:image/png;base64,{_BG}");
+    background-image: url("data:image/png;base64,{_BG_MOBILE}");
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
-    background-attachment: fixed;
+    background-attachment: scroll;
     font-family: 'Inter', 'Segoe UI', sans-serif;
     color: #ececec;
+}}
+
+/* ── Desktop background ── */
+@media (min-width: 768px) {{
+    [data-testid="stAppViewContainer"] {{
+        background-image: url("data:image/png;base64,{_BG_DESKTOP}");
+        background-attachment: fixed;
+    }}
 }}
 
 /* ── Transparent layers so bg shows through ── */
@@ -71,6 +81,11 @@ footer {{ display: none !important; }}
 
 /* Hide Streamlit's default sidebar collapse arrow — we use our own toggle */
 [data-testid="collapsedControl"] {{ display: none !important; }}
+
+/* Hide the sidebar toggle button that appears in the header next to the logo */
+[data-testid="stSidebarNavItems"] {{ display: none !important; }}
+button[kind="header"] {{ display: none !important; }}
+[data-testid="stHeader"] button:first-child {{ display: none !important; }}
 
 /* ── Keep header/toolbar visible and on top ── */
 [data-testid="stHeader"] {{
@@ -289,15 +304,15 @@ hr {{
 /* ── "Created by" label — fixed below chat input ── */
 .created-by {{
     position: fixed;
-    bottom: 6px;
+    bottom: 10px;
     left: 0; right: 0;
     text-align: center;
-    color: rgba(255,255,255,0.18);
-    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    font-size: 12px;
     font-family: 'Inter', sans-serif;
     letter-spacing: 0.04em;
     pointer-events: none;
-    z-index: 49;
+    z-index: 9999;
 }}
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"],
@@ -373,9 +388,9 @@ _cv1.html("""
     d.head.appendChild(style);
 
     btn.onclick = function() {
-        var sb = d.querySelector('[data-testid="collapsedControl"] button')
-               || d.querySelector('button[aria-label="Close sidebar"]')
-               || d.querySelector('button[aria-label="Open sidebar"]');
+        var sb = d.querySelector('button[aria-label="Close sidebar"]')
+               || d.querySelector('button[aria-label="Open sidebar"]')
+               || d.querySelector('[data-testid="collapsedControl"] button');
         if (sb) { sb.click(); return; }
         var all = d.querySelectorAll('button');
         for (var b of all) {
